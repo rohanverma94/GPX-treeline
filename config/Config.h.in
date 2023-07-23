@@ -1,0 +1,11 @@
+//
+// Created by rohandev on 7/23/23.
+//
+
+#ifndef TREELINE_TEST_CONFIG_H_IN
+#define TREELINE_TEST_CONFIG_H_IN
+// Config.h.in
+
+#define SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+
+#endif //TREELINE_TEST_CONFIG_H_IN

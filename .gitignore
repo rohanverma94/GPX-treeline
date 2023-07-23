@@ -1,0 +1,6 @@
+config/Config.h
+/cmake-build-release/
+/cmake-build-debug/
+/.idea/
+/dbinstance/
+!/dbinstance/.gitignore
