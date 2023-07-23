@@ -1,0 +1,217 @@
+from itertools import product
+
+DBS = [
+  "pg_llsm",
+  "rocksdb",
+  #"leanstore",
+]
+
+INSERTS_PER_EPOCH = [
+  #10, 100, 1000, 10000, 
+  #25000, 50000, 75000,
+  100000, 
+  #125000, 150000, 175000, 200000,
+]
+
+THREADS = [
+  1,
+  8,
+]
+
+CONFIG_64B = {
+  "name": "64B",
+  "record_size_bytes": 64,
+
+  # Used by page-grouped LLSM.
+  "records_per_page_goal": 44,
+  "records_per_page_epsilon": 5,
+
+  # Used by all DBs.
+  # 18 MiB in total (2 x 4 MiB + 10 MiB)
+  "memtable_mib": 4,
+  "cache_mib": 10,
+}
+
+CONFIG_512B = {
+  "name": "512B",
+  "record_size_bytes": 512,
+
+  # Used by page-grouped LLSM.
+  "records_per_page_goal": 4,
+  "records_per_page_epsilon": 1,
+
+  # Used by all DBs.
+  # 146 MiB in total
+  "memtable_mib": 32,
+  "cache_mib": 82,
+}
+
+CONFIG_1024B = {
+  "name": "1024B",
+  "record_size_bytes": 1024,
+
+  # Used by page-grouped LLSM.
+  "records_per_page_goal": 2,
+  "records_per_page_epsilon": 0.5,
+
+  # Used by all DBs.
+  # 292 MiB in total
+  "memtable_mib": 64,
+  "cache_mib": 164,
+}
+
+CONFIGS = [
+  CONFIG_64B,
+  CONFIG_512B,
+  CONFIG_1024B,
+]
+
+COMMON_OPTIONS = {
+  "bg_threads": 4,
+  "latency_sample_period": 10,
+
+  # Affects RocksDB & LLSM
+  "bypass_wal": True,
+  "use_direct_io": True,
+
+  # Affects RocksDB
+  "rdb_bloom_bits": 10,
+  "rdb_prefix_bloom_size": 3,
+
+  # Temporary: Disable batching when evicting from the cache.
+  "rec_cache_batch_writeout": True,
+
+  # Affects LLSM and page-grouped LLSM
+  "optimistic_rec_caching": False,
+}
+
+FORECASTING_OPTIONS = {
+  "use_insert_forecasting": True,
+  "sample_size": 200000,
+  "random_seed": 42,
+  "overestimation_factor": 1,
+  "num_future_epochs": 100,
+}
+
+TAXI_DATASET = {
+  "name": "taxi",
+  "path": "'$TP_DATASET_PATH/inserts/taxi_load_1M.txt'",
+  "insert_trace_path": "'$TP_DATASET_PATH/inserts/taxi_insert_8M.txt'",
+}
+
+WIKI_DATASET = {
+  "name": "wiki",
+  "path": "'$TP_DATASET_PATH/inserts/wiki_ts_load_1M.txt'",
+  "insert_trace_path": "'$TP_DATASET_PATH/inserts/wiki_ts_insert_8M.txt'",
+}
+
+CUSTOM_DATASETS = [
+  TAXI_DATASET, 
+  WIKI_DATASET
+]
+
+
+def process_config(db, config):
+  copy = config.copy()
+  del copy["cache_mib"]
+  del copy["memtable_mib"]
+  del copy["name"]
+
+  # Set the memory configuration.
+  if db == "pg_llsm":
+    copy["cache_size_mib"] = config["cache_mib"] + (2 * config["memtable_mib"])
+  else:
+    copy["cache_size_mib"] = config["cache_mib"]
+    copy["memtable_size_mib"] = config["memtable_mib"]
+
+  return copy
+
+
+run_command(
+  name="perfect_alloc-fast-combined",
+  run="python3 combine_raw.py",
+  deps=[
+    ":perfect_alloc-fast",
+  ],
+)
+
+combine(
+  name="perfect_alloc-fast",
+  deps=[
+    ":palloc-rocksdb-1024B-taxi-8",
+    ":palloc-rocksdb-1024B-wiki-8",
+    ":palloc-pg_llsm-1024B-taxi-8",
+    ":palloc-pg_llsm-1024B-wiki-8",
+  ],
+)
+
+run_experiment_group(
+  name="perfect_alloc",
+  run="./run.sh",
+  experiments=[
+    ExperimentInstance(
+      name="palloc-{}-{}-{}-{}".format(db, config["name"], dataset["name"], threads),
+      options={
+        **COMMON_OPTIONS,
+        **process_config(db, config),
+        "db": db,
+        "workload_config": "workloads/custom.yml",
+        "checkpoint_name": "palloc-{}-{}-{}".format(db, config["name"], dataset["name"]),
+        "custom_inserts": "custom:" + dataset["insert_trace_path"],
+        "custom_dataset": dataset["path"],
+        "threads": threads,
+        "use_insert_forecasting": False,
+      },
+    )
+    for db, config, dataset, threads in product(DBS, CONFIGS, CUSTOM_DATASETS, THREADS)
+  ],
+  deps=[
+    ":preload-{}-{}-{}".format(db, config["name"], dataset["name"])
+    for db, config, dataset in product(DBS, CONFIGS, CUSTOM_DATASETS)
+  ],
+)
+
+# e.g.: forecasting-1024B-taxi-8
+run_experiment_group(
+  name="forecasting",
+  run="./run.sh",
+  experiments=[
+    ExperimentInstance(
+      name="forecasting-{}-{}-{}-{}".format(config["name"], dataset["name"], threads, inserts_per_epoch),
+      args=["--no_alloc_only"],
+      options={
+        **COMMON_OPTIONS,
+        **FORECASTING_OPTIONS,
+        **process_config("pg_llsm", config),
+        "db": "pg_llsm",
+        "workload_config": "workloads/custom.yml",
+        "checkpoint_name": "palloc-pg_llsm-{}-{}".format(config["name"], dataset["name"]),
+        "custom_inserts": "custom:" + dataset["insert_trace_path"],
+        "custom_dataset": dataset["path"],
+        "threads": threads,
+        "num_inserts_per_epoch": inserts_per_epoch,
+        "num_partitions": int(inserts_per_epoch/5),
+      },
+    )
+    for config, dataset, threads, inserts_per_epoch in product(CONFIGS, CUSTOM_DATASETS, THREADS, INSERTS_PER_EPOCH)
+  ],
+  deps=[
+    ":preload-pg_llsm-{}-{}".format(config["name"], dataset["name"])
+    for config, dataset in product(CONFIGS, CUSTOM_DATASETS)
+  ],
+)
+
+for db, config, dataset in product(DBS, CONFIGS, CUSTOM_DATASETS):
+  run_command(
+    name="preload-{}-{}-{}".format(db, config["name"], dataset["name"]),
+    run="./preload.sh",
+    options={
+      **COMMON_OPTIONS,
+      **process_config(db, config),
+      "db": db,
+      "workload_config": "workloads/setup.yml",
+      "checkpoint_name": "palloc-{}-{}-{}".format(db, config["name"], dataset["name"]),
+      "custom_dataset": dataset["path"],
+      "threads": 1,
+    },
+  )

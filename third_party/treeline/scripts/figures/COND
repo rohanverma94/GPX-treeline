@@ -1,0 +1,128 @@
+run_command(
+  name="ycsb-main",
+  run="python3 plot_ycsb.py",
+  deps=[
+    "//scripts/ycsb_v2:combine-main",
+  ],
+)
+
+run_command(
+  name="rw_sweep",
+  run="python3 plot_rw_sweep.py",
+  options={
+    "distribution": "zipfian",
+    "record_size_bytes": 64,
+    "y_min": 0,
+    "y_max": 650,
+  },
+  deps=["//scripts/rw_sweep:combine-figure"],
+)
+
+run_command(
+  name="factor",
+  run="python3 format_factor.py",
+  deps=[
+    "//scripts/ycsb_v2:combine-factor",
+  ]
+)
+
+# Plot our dataset CDFs.
+combine(
+  name="plot-cdfs",
+  deps=[
+    ":amzn-cdf",
+    ":osm-cdf",
+    ":synth_20m-cdf",
+  ],
+)
+
+run_command(
+  name="amzn-cdf",
+  run="./plot_cdf.sh",
+  args=["--show_ylabel"],
+  options={
+    "name": "amzn",
+    "inset_min": 12000000,
+    "inset_max": 12000015,
+    "dataset_path": "'$TP_DATASET_PATH/amazon_reviews.txt'",
+  },
+  parallelizable=True,
+)
+
+run_command(
+  name="osm-cdf",
+  run="./plot_cdf.sh",
+  options={
+    "name": "osm",
+    "inset_min": 12000000,
+    "inset_max": 12000025,
+    "dataset_path": "'$TP_DATASET_PATH/osm_ny.txt'",
+  },
+  parallelizable=True,
+)
+
+run_command(
+  name="synth_20m-cdf",
+  run="./plot_cdf.sh",
+  options={
+    "name": "synth_20m",
+    "inset_min": 10000000,
+    "inset_max": 10000015,
+    "dataset_path": "'$TP_DATASET_PATH/synth_20m.txt'",
+  },
+  parallelizable=True,
+)
+
+# Plot the page grouping sensitivity study.
+run_command(
+  name="pg_sweep",
+  run="python3 plot_pg_sweep.py",
+  deps=[
+    "//scripts/pg_analysis:process_sweep",
+  ],
+)
+
+# Plot the page grouping segment distributions.
+run_command(
+  name="pg_dist",
+  run="python3 plot_pg_dist.py",
+  deps=[
+    "//scripts/pg_analysis:process_segment_size",
+  ],
+)
+
+# Plot the fio random write motivational microbenchmark.
+run_command(
+  name="rand_write",
+  run="python3 plot_rand_io.py",
+  options={
+    "key": "write",
+    "out-name": "rand_write.pdf",
+    "peak-seq-bw-mb": 1100,
+  },
+  deps=[
+    "//scripts/iochar/write:rand-sweep",
+  ],
+)
+
+run_command(
+  name="rand_read",
+  run="python3 plot_rand_io.py",
+  options={
+    "key": "read",
+    "out-name": "rand_read.pdf",
+    "peak-seq-bw-mb": 2850,
+  },
+  deps=[
+    "//scripts/iochar/read:rand-sweep",
+  ],
+)
+
+run_command(
+  name="greedyplr-compare",
+  run="python3 plot_greedyplr_compare.py",
+  deps=[
+    "//scripts/ycsb_v2:combine-main",
+    "//scripts/ycsb_v2:combine-amzn-greedyplr",
+  ],
+)
