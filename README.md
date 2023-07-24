@@ -8,3 +8,9 @@ mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Debug .. 
 make -j
 ```
+or
+```
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release .. 
+make -j
+```
