@@ -1,6 +1,6 @@
 ## Addon and Client for TreelineDB
 
-Objective of this project is to make tooling and ecosystem around Treeline DB for fedora and other distribution.
+Objective of this project is to make tooling and ecosystem around Treeline storage engine for fedora and other distribution.
 
 To build
 ```
