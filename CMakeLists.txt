@@ -41,7 +41,7 @@ ExternalProject_Add(glog_external_project
 include_directories(BEFORE SYSTEM ${GLOG_INCLUDE_DIR})
 link_directories(${GLOG_LIB_DIR})
 
-add_executable(treeline_test src/main.cpp lib/easy_threads/easy_threads.cpp lib/easy_threads/easy_threads.h lib/easy_utils/easy_utils.cpp lib/easy_utils/easy_utils.h lib/easy_utils/extra_precision_timers.h lib/easy_utils/high_precision_timer.cpp lib/easy_utils/high_precision_timer.h lib/easy_cli/easy_cli.cpp lib/easy_cli/easy_cli.h lib/easy_utils/timer.cpp lib/easy_utils/timer.h)
+add_executable(treeline_test src/db_entry.cpp lib/easy_threads/easy_threads.cpp lib/easy_threads/easy_threads.h lib/easy_utils/easy_utils.cpp lib/easy_utils/easy_utils.h lib/easy_utils/extra_precision_timers.h lib/easy_utils/high_precision_timer.cpp lib/easy_utils/high_precision_timer.h lib/easy_cli/easy_cli.cpp lib/easy_cli/easy_cli.h lib/easy_utils/timer.cpp lib/easy_utils/timer.h)
 add_dependencies(treeline_test glog_external_project)
 target_include_directories(treeline_test PUBLIC third_party/treeline/include ${CMAKE_SOURCE_DIR}/config)
 target_link_libraries(treeline_test PUBLIC tbb treeline pg_treeline glog gflags unwind)

@@ -17,8 +17,11 @@ class timer {
 
 public:
 	static bool isEnabled();
+
 	static void SleepMicros(uint32_t micros);
-	static void *UpdateTimerCounter(void* arg);
+
+	static void *UpdateTimerCounter(void *arg);
+
 	pthread_t InitClock(uint32_t precision_micros);
 };
 

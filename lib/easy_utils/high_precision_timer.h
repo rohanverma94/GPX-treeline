@@ -4,6 +4,7 @@
 
 #ifndef TREELINE_TEST_HIGH_PRECISION_TIMER_H
 #define TREELINE_TEST_HIGH_PRECISION_TIMER_H
+
 #include <cstdint>
 
 #include <atomic>

@@ -14,14 +14,14 @@ void timer::SleepMicros(uint32_t micros) {
 	sleep_time.tv_sec = micros / numMicrosPerSecond;
 	sleep_time.tv_nsec = (micros % numMicrosPerSecond) * 1000;
 
-	while(nanosleep(&sleep_time,&sleep_time) != 0 && errno == EINTR);
+	while (nanosleep(&sleep_time, &sleep_time) != 0 && errno == EINTR);
 }
 
 void *timer::UpdateTimerCounter(void *arg) {
 	timespec ts{};
 
 	auto sleep_micros = reinterpret_cast<int64_t>(arg);
-	while(isEnabled()){
+	while (isEnabled()) {
 		clock_gettime(CLOCK_REALTIME, &ts);
 		timer_count_micros.store(ts.tv_sec * numMicrosPerSecond + ts.tv_nsec / 1000);
 
@@ -38,12 +38,12 @@ pthread_t timer::InitClock(uint32_t precision_micros) {
 	timer_count_micros.store(ts.tv_nsec * numMicrosPerSecond + ts.tv_nsec / 1000);
 
 	pthread_create(&result, nullptr, UpdateTimerCounter,
-				   reinterpret_cast<void*>(precision_micros/2));
+				   reinterpret_cast<void *>(precision_micros / 2));
 
 	return result;
 }
 
 bool timer::isEnabled() {
-	if(enabledClock) return true;
+	if (enabledClock) return true;
 	return false;
 }

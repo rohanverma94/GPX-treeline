@@ -5,8 +5,7 @@
 #ifndef TREELINE_TEST_EXTRA_PRECISION_TIMERS_H
 #define TREELINE_TEST_EXTRA_PRECISION_TIMERS_H
 
-inline __attribute__((always_inline)) unsigned long rdtsc()
-{
+inline __attribute__((always_inline)) unsigned long rdtsc() {
 	unsigned long a, d;
 
 	__asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
@@ -15,8 +14,7 @@ inline __attribute__((always_inline)) unsigned long rdtsc()
 }
 
 
-inline __attribute__((always_inline)) unsigned long rdtscp()
-{
+inline __attribute__((always_inline)) unsigned long rdtscp() {
 	unsigned long a, d, c;
 
 	__asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
@@ -24,69 +22,62 @@ inline __attribute__((always_inline)) unsigned long rdtscp()
 	return (a | (d << 32));
 }
 
-inline __attribute__((always_inline)) unsigned long full_rdtscp(int *chip, int *core)
-{
+inline __attribute__((always_inline)) unsigned long full_rdtscp(int *chip, int *core) {
 	unsigned long a, d, c;
 
 	__asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
-	*chip = (c & 0xFFF000UL)>>12;
+	*chip = (c & 0xFFF000UL) >> 12;
 	*core = c & 0xFFFUL;
 
 	return (a | (d << 32));
 }
 
 
-inline __attribute__((always_inline)) int get_core_number()
-{
+inline __attribute__((always_inline)) int get_core_number() {
 	unsigned long a, d, c;
 
 	__asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
 
-	return ( c & 0xFFFUL );
+	return (c & 0xFFFUL);
 }
 
-inline __attribute__((always_inline)) int get_socket_number()
-{
+inline __attribute__((always_inline)) int get_socket_number() {
 	unsigned long a, d, c;
 
 	__asm__ volatile("rdtscp" : "=a" (a), "=d" (d), "=c" (c));
 
-	return ( (c & 0xF000UL)>>12 );
+	return ((c & 0xF000UL) >> 12);
 }
 
 
-inline __attribute__((always_inline)) unsigned long rdpmc_instructions()
-{
+inline __attribute__((always_inline)) unsigned long rdpmc_instructions() {
 	unsigned long a, d, c;
 
-	c = (1UL<<30);
+	c = (1UL << 30);
 	__asm__ volatile("rdpmc" : "=a" (a), "=d" (d) : "c" (c));
 
 	return (a | (d << 32));
 }
 
-inline __attribute__((always_inline)) unsigned long rdpmc_actual_cycles()
-{
+inline __attribute__((always_inline)) unsigned long rdpmc_actual_cycles() {
 	unsigned long a, d, c;
 
-	c = (1UL<<30)+1;
+	c = (1UL << 30) + 1;
 	__asm__ volatile("rdpmc" : "=a" (a), "=d" (d) : "c" (c));
 
 	return (a | (d << 32));
 }
 
-inline __attribute__((always_inline)) unsigned long rdpmc_reference_cycles()
-{
+inline __attribute__((always_inline)) unsigned long rdpmc_reference_cycles() {
 	unsigned long a, d, c;
 
-	c = (1UL<<30)+2;
+	c = (1UL << 30) + 2;
 	__asm__ volatile("rdpmc" : "=a" (a), "=d" (d) : "c" (c));
 
 	return (a | (d << 32));
 }
 
-inline __attribute__((always_inline)) unsigned long rdpmc(int c)
-{
+inline __attribute__((always_inline)) unsigned long rdpmc(int c) {
 	unsigned long a, d;
 
 	__asm__ volatile("rdpmc" : "=a" (a), "=d" (d) : "c" (c));
@@ -100,8 +91,7 @@ inline __attribute__((always_inline)) unsigned long rdpmc(int c)
 // The number of counters per logical processor is contained in
 // bits 15:8 of EAX after executing the CPUID instruction
 // with an initial EAX value of 0x0a (optional input in ECX is not used).
-int get_num_core_counters()
-{
+int get_num_core_counters() {
 	unsigned int eax, ebx, ecx, edx;
 	unsigned int leaf, subleaf;
 	int width;
@@ -109,17 +99,16 @@ int get_num_core_counters()
 	leaf = 0x0000000a;
 	subleaf = 0x0;
 	__asm__ __volatile__ ("cpuid" : \
-	  "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
+      "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
 
-	return((eax & 0x0000ff00) >> 8);
+	return ((eax & 0x0000ff00) >> 8);
 }
 
 // core performance counter width varies by processor
 // the width is contained in bits 23:16 of the EAX register
 // after executing the CPUID instruction with an initial EAX
 // argument of 0x0a (subleaf 0x0 in ECX).
-int get_core_counter_width()
-{
+int get_core_counter_width() {
 	unsigned int eax, ebx, ecx, edx;
 	unsigned int leaf, subleaf;
 	int width;
@@ -127,17 +116,16 @@ int get_core_counter_width()
 	leaf = 0x0000000a;
 	subleaf = 0x0;
 	__asm__ __volatile__ ("cpuid" : \
-	  "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
+      "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
 
-	return((eax & 0x00ff0000) >> 16);
+	return ((eax & 0x00ff0000) >> 16);
 }
 
 // fixed-function performance counter width varies by processor
 // the width is contained in bits 12:5 of the EDX register
 // after executing the CPUID instruction with an initial EAX
 // argument of 0x0a (subleaf 0x0 in ECX).
-int get_fixed_counter_width()
-{
+int get_fixed_counter_width() {
 	unsigned int eax, ebx, ecx, edx;
 	unsigned int leaf, subleaf;
 	int width;
@@ -145,9 +133,9 @@ int get_fixed_counter_width()
 	leaf = 0x0000000a;
 	subleaf = 0x0;
 	__asm__ __volatile__ ("cpuid" : \
-	  "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
+      "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
 
-	return((edx & 0x00001fe0) >> 5);
+	return ((edx & 0x00001fe0) >> 5);
 }
 
 // assume that these functions will automatically do the right thing if they are
@@ -161,14 +149,13 @@ int get_fixed_counter_width()
 // current system, then use that as the third argument to this function.
 // 64-bit counters don't generally roll over, but I added a special case
 // for this
-unsigned long corrected_pmc_delta(unsigned long end, unsigned long start, int pmc_width)
-{
-	unsigned long error_return=0xffffffffffffffff;
+unsigned long corrected_pmc_delta(unsigned long end, unsigned long start, int pmc_width) {
+	unsigned long error_return = 0xffffffffffffffff;
 	unsigned long result;
 	// sanity checks
 	if ((pmc_width <= 0) || (pmc_width > 64)) {
-		fprintf(stderr,"ERROR: corrected_pmc_delta() called with illegal performance counter width %d\n",pmc_width);
-		return(error_return);
+		fprintf(stderr, "ERROR: corrected_pmc_delta() called with illegal performance counter width %d\n", pmc_width);
+		return (error_return);
 	}
 	// Due to the specifics of unsigned arithmetic, for pmc_width == sizeof(unsigned long),
 	// the simple calculation (end-start) gives the correct delta even if the counter has
@@ -181,7 +168,7 @@ unsigned long corrected_pmc_delta(unsigned long end, unsigned long start, int pm
 			result = end - start;
 		} else {
 			// I think this works independent of ordering, but this makes the most intuitive sense
-			result = (end + (1UL<<pmc_width)) - start;
+			result = (end + (1UL << pmc_width)) - start;
 		}
 		return (result);
 	}
@@ -194,29 +181,28 @@ unsigned long corrected_pmc_delta(unsigned long end, unsigned long start, int pm
 // not "MHz" or "THz".  So far this works on all processors tested.
 // Return value is frequency in Hz, so user will need to divide by 1e9
 // if GHz is desired....
-float get_TSC_frequency()
-{
+float get_TSC_frequency() {
 	unsigned int eax, ebx, ecx, edx;
 	unsigned int leaf, subleaf;
-	unsigned int  intbuf[12];
+	unsigned int intbuf[12];
 	char *buffer;
-	int i,j,k,base,start,stop,length;
+	int i, j, k, base, start, stop, length;
 	float freq_GHz;
 	float frequency;
 
-	subleaf=0;
+	subleaf = 0;
 
 	base = 0;
-	for (leaf=0x80000002; leaf<0x80000005; leaf++) {
+	for (leaf = 0x80000002; leaf < 0x80000005; leaf++) {
 		// printf("DEBUG: leaf = %x\n",leaf);
 		__asm__ __volatile__ ("cpuid" : \
-		  "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
+          "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
 
 		// printf("leaf = %x, eax = %8.8x, ebx = %8.8x, ecx = %8.8x, edx = %8.8x\n",leaf, eax, ebx, ecx, edx);
 		intbuf[base] = eax;
-		intbuf[base+1] = ebx;
-		intbuf[base+2] = ecx;
-		intbuf[base+3] = edx;
+		intbuf[base + 1] = ebx;
+		intbuf[base + 2] = ecx;
+		intbuf[base + 3] = edx;
 		base += 4;
 		// printf("  DEBUG: %.8s %.8s %.8s %.8s\n",eax,ebx,ecx,edx);
 	}
@@ -236,24 +222,24 @@ float get_TSC_frequency()
 	// printf("\n");
 	// printf("\n");
 	// printf("Scanning backwards to try to find the frequency digits....\n");
-	for (base=47; base>0; base--){
+	for (base = 47; base > 0; base--) {
 		if (buffer[base] == 0x7a) {
 			// printf("Found z at location %d\n",base);
-			if (buffer[base-1] == 0x48) {
+			if (buffer[base - 1] == 0x48) {
 				// printf("Found H at location %d\n",base-1);
-				if (buffer[base-2] == 0x47) {
+				if (buffer[base - 2] == 0x47) {
 					// printf("Found G at location %d\n",base-2);
 					// printf(" -- need to extract string now\n");
-					i = base-3;
-					stop = base-3;
+					i = base - 3;
+					stop = base - 3;
 					// printf("begin reverse search at stop character location %d\n",i);
-					while(buffer[i] != 0x20) {
+					while (buffer[i] != 0x20) {
 						// printf("found a non-blank character %c (%x) at location %d\n",buffer[i],buffer[i],i);
 						i--;
 					}
-					start = i+1;
+					start = i + 1;
 					length = stop - start + 1;
-					k = length+1;
+					k = length + 1;
 					// for (j=stop; j<start; j--) {
 					// printf("DEBUG: buffer[%d] = %c\n",j,buffer[j]);
 					// k--;
@@ -263,14 +249,15 @@ float get_TSC_frequency()
 					// note that sscanf will automatically stop when the string changes from digits
 					// to non-digits, so I don't need to NULL-terminate the string in the buffer.
 					//
-					sscanf((char *)&buffer[start],"%f",&freq_GHz);
+					sscanf((char *) &buffer[start], "%f", &freq_GHz);
 					// printf("Frequency is %f GHz\n",freq_GHz);
-					frequency = 1.0e9*freq_GHz;
+					frequency = 1.0e9 * freq_GHz;
 					return (frequency);
 				}
 			}
 		}
 	}
-	return(-1.0);
+	return (-1.0);
 }
+
 #endif //TREELINE_TEST_EXTRA_PRECISION_TIMERS_H
