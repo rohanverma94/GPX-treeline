@@ -1,6 +1,6 @@
-## Addon and Client for TreelineDB
+## Graph Primitives eXtension for Treeline
 
-Objective of this project is to make tooling and ecosystem around Treeline storage engine for fedora and other distribution.
+Objective of this project is to make Graph database around Treeline storage engine for fedora and other distribution.
 
 To build
 ```
