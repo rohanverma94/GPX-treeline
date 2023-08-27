@@ -10,7 +10,7 @@
 
 static std::atomic_int timer_fd = ATOMIC_VAR_INIT(-4);
 std::atomic<int64_t> high_precision_timer::timer_count_micros;
-
+//Memory ordering - relaxed, good for timers and counters etc
 void *high_precision_timer::UpdateTimerCounter(void *arg) {
 	int fd;
 	uint64_t missed;
